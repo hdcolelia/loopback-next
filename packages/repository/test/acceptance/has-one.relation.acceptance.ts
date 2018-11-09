@@ -47,7 +47,7 @@ describe('hasOne relation', () => {
       street: '123 test avenue',
     });
 
-    const persisted = await addressRepo.findById(address.zipcode);
+    const persisted = await addressRepo.findById(address.customerId);
     expect(persisted.toObject()).to.deepEqual(address.toObject());
   });
 
@@ -58,21 +58,17 @@ describe('hasOne relation', () => {
     expect(
       controller.createCustomerAddress(existingCustomerId, {
         street: '456 test street',
-        zipcode: '44012',
+        customerId: 44012,
       }),
-    ).to.be.rejectedWith(
-      /does not allow creation of more than one target model instance/,
-    );
+    ).to.be.rejectedWith(/Property "customerId" cannot be changed!/);
     expect(address.toObject()).to.containDeep({
       customerId: existingCustomerId,
       street: '123 test avenue',
     });
 
-    const persisted = await addressRepo.findById(address.zipcode);
+    const persisted = await addressRepo.findById(address.customerId);
     expect(persisted.toObject()).to.deepEqual(address.toObject());
-    expect(addressRepo.findById('44012')).to.be.rejectedWith(
-      /Entity not found/,
-    );
+    expect(addressRepo.findById(44012)).to.be.rejectedWith(/Entity not found/);
   });
 
   it('can find instance of the related model', async () => {

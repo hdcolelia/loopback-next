@@ -18,6 +18,7 @@ import {BelongsToDefinition, RelationType} from '../relation.types';
 export function belongsTo<T extends Entity>(
   targetResolver: EntityResolver<T>,
   definition?: Partial<BelongsToDefinition>,
+  propertyMeta?: Partial<PropertyDefinition>,
 ) {
   return function(decoratedTarget: Entity, decoratedKey: string) {
     const propMeta: PropertyDefinition = {
@@ -29,6 +30,8 @@ export function belongsTo<T extends Entity>(
       // allows controller methods to exclude required properties
       // required: true,
     };
+    //FIXME(b-admike): Add unit tests
+    Object.assign(propMeta, propertyMeta);
     property(propMeta)(decoratedTarget, decoratedKey);
 
     // @belongsTo() is typically decorating the foreign key property,

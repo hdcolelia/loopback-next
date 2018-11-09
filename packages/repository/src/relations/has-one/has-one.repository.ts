@@ -61,21 +61,10 @@ export class DefaultHasOneRepository<
     options?: Options,
   ): Promise<TargetEntity> {
     const targetRepository = await this.getTargetRepository();
-    // should we have an in memory LUT instead of a db query to increase
-    // performance here?
-    const found = await targetRepository.find(
-      constrainFilter({}, this.constraint),
+    return await targetRepository.create(
+      constrainDataObject(targetModelData, this.constraint),
+      options,
     );
-    if (found.length > 0) {
-      throw new Error(
-        'HasOne relation does not allow creation of more than one target model instance',
-      );
-    } else {
-      return await targetRepository.create(
-        constrainDataObject(targetModelData, this.constraint),
-        options,
-      );
-    }
   }
 
   async get(
