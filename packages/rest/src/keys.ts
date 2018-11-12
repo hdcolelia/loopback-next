@@ -32,7 +32,7 @@ import {HttpProtocol} from '@loopback/http-server';
 import * as https from 'https';
 import {ErrorWriterOptions} from 'strong-error-handler';
 import {RestRouter} from './router';
-import {RequestBodyParser, BodyParser} from './body-parsers';
+import {RequestBodyParser} from './body-parsers';
 
 /**
  * RestServer-specific bindings
@@ -98,18 +98,6 @@ export namespace RestBindings {
    */
   export const REQUEST_BODY_PARSER = BindingKey.create<RequestBodyParser>(
     'rest.requestBodyParser',
-  );
-
-  export const REQUEST_BODY_PARSER_JSON = BindingKey.create<BodyParser>(
-    'rest.requestBodyParser.json',
-  );
-
-  export const REQUEST_BODY_PARSER_TEXT = BindingKey.create<BodyParser>(
-    'rest.requestBodyParser.text',
-  );
-
-  export const REQUEST_BODY_PARSER_URLENCODED = BindingKey.create<BodyParser>(
-    'rest.requestBodyParser.urlencoded',
   );
 
   /**

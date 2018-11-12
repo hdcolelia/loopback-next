@@ -3,21 +3,17 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions} from '../types';
-
+import {RequestBodyParserOptions, Request} from '../types';
 import {text} from 'body-parser';
 import {inject} from '@loopback/context';
-import {Request} from '../..';
 import {RestBindings} from '../keys';
 import {is} from 'type-is';
-
 import {RequestBody, BodyParser} from './types';
 import {
   BodyParserWithCallback,
-  DEFAULT_LIMIT,
   getParserOptions,
   parseRequest,
-} from './helper';
+} from './body-parser.helpers';
 
 export class TextBodyParser implements BodyParser {
   name = 'text';
@@ -28,13 +24,15 @@ export class TextBodyParser implements BodyParser {
     options: RequestBodyParserOptions = {},
   ) {
     const textOptions = Object.assign(
-      {type: 'text/*', limit: DEFAULT_LIMIT},
+      {type: 'text/*'},
       getParserOptions('text', options),
     );
     this.textParser = text(textOptions);
   }
 
   supports(mediaType: string) {
+    // Please note that `text/*` matches `text/plain` and `text/html` but`text`
+    // does not.
     return !!is(mediaType, 'text/*');
   }
 

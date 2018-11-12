@@ -3,21 +3,18 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions} from '../types';
-
+import {RequestBodyParserOptions, Request} from '../types';
 import {urlencoded} from 'body-parser';
 import {inject} from '@loopback/context';
-import {Request} from '../..';
 import {RestBindings} from '../keys';
 import {is} from 'type-is';
 
 import {RequestBody, BodyParser} from './types';
 import {
   BodyParserWithCallback,
-  DEFAULT_LIMIT,
   getParserOptions,
   parseRequest,
-} from './helper';
+} from './body-parser.helpers';
 
 export class UrlEncodedBodyParser implements BodyParser {
   name = 'urlencoded';
@@ -28,7 +25,7 @@ export class UrlEncodedBodyParser implements BodyParser {
     options: RequestBodyParserOptions = {},
   ) {
     const urlencodedOptions = Object.assign(
-      {type: 'urlencoded', limit: DEFAULT_LIMIT, extended: true},
+      {extended: true},
       getParserOptions('urlencoded', options),
     );
     this.urlencodedParser = urlencoded(urlencodedOptions);

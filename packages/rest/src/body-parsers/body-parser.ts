@@ -13,7 +13,7 @@ import {RestHttpErrors} from '../rest-http-error';
 const debug = debugModule('loopback:rest:body-parser');
 
 import {RequestBody, BodyParser, REQUEST_BODY_PARSER_TAG} from './types';
-import {getContentType, normalizeParsingError} from './helper';
+import {getContentType, normalizeParsingError} from './body-parser.helpers';
 import {RestBindings} from '../keys';
 import {JsonBodyParser} from './body-parser.json';
 import {UrlEncodedBodyParser} from './body-parser.urlencoded';

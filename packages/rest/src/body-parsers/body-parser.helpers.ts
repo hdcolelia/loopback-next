@@ -84,11 +84,11 @@ export function getParserOptions(
   options: RequestBodyParserOptions,
 ): OptionsText;
 
-export function getParserOptions<T extends 'json' | 'urlencoded' | 'text'>(
-  type: T,
+export function getParserOptions(
+  type: 'json' | 'urlencoded' | 'text',
   options: RequestBodyParserOptions,
 ) {
-  const opts: {[name: string]: any} = {};
+  const opts: {[name: string]: any} = {limit: DEFAULT_LIMIT};
   Object.assign(opts, options[type], options);
   for (const k of ['json', 'urlencoded', 'text']) {
     delete opts[k];
