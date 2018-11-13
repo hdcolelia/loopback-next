@@ -15,11 +15,10 @@ import {
   RequestBodyParser,
   BodyParser,
   Request,
-  Response,
   REQUEST_BODY_PARSER_TAG,
 } from '../..';
 import {ControllerSpec, get} from '@loopback/openapi-v3';
-import {Context, inject} from '@loopback/context';
+import {Context} from '@loopback/context';
 import {Client, createClientForHandler, expect} from '@loopback/testlab';
 import * as HttpErrors from 'http-errors';
 import {ParameterObject, RequestBodyObject} from '@loopback/openapi-v3-types';
@@ -27,8 +26,6 @@ import {anOpenApiSpec, anOperationSpec} from '@loopback/openapi-spec-builder';
 import {createUnexpectedHttpErrorLogger} from '../helpers';
 import * as express from 'express';
 import {is} from 'type-is';
-import * as path from 'path';
-import * as multer from 'multer';
 
 const SequenceActions = RestBindings.SequenceActions;
 
@@ -496,83 +493,6 @@ describe('HttpHandler', () => {
           // Request body parsing is skipped
           expect(request.body).to.be.undefined();
           return {key: 'new-value'};
-        }
-      }
-
-      givenControllerClass(RouteParamController, spec);
-    }
-  });
-
-  context('multipart/form-data', () => {
-    beforeEach(givenBodyParamController);
-
-    it('supports file uploads', async () => {
-      const FIXTURES = path.resolve(__dirname, '../../../fixtures');
-      const res = await client
-        .post('/show-body')
-        .field('user', 'john')
-        .field('email', 'john@example.com')
-        .attach('certFile', path.resolve(FIXTURES, 'cert.pem'), {
-          filename: 'cert.pem',
-          contentType: 'multipart/form-data',
-        })
-        .expect(200);
-      expect(res.body.files[0]).containEql({
-        fieldname: 'certFile',
-        originalname: 'cert.pem',
-        mimetype: 'multipart/form-data',
-      });
-    });
-
-    function givenBodyParamController() {
-      const spec = anOpenApiSpec()
-        .withOperation('post', '/show-body', {
-          'x-operation-name': 'showBody',
-          requestBody: <RequestBodyObject>{
-            description: 'multipart/form-data value.',
-            required: true,
-            content: {
-              'multipart/form-data': {
-                // Skip body parsing
-                'x-skip-body-parsing': true,
-                schema: {type: 'object'},
-              },
-            },
-          },
-          responses: {
-            200: {
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                  },
-                },
-              },
-              description: '',
-            },
-          },
-        })
-        .build();
-
-      class RouteParamController {
-        async showBody(
-          request: Request,
-          @inject(RestBindings.Http.RESPONSE) response: Response,
-        ): Promise<Object> {
-          const storage = multer.memoryStorage();
-          const upload = multer({storage});
-          return new Promise<object>((resolve, reject) => {
-            upload.any()(request, response, err => {
-              if (err) reject(err);
-              else {
-                resolve({
-                  files: request.files,
-                  // tslint:disable-next-line:no-any
-                  fields: (request as any).fields,
-                });
-              }
-            });
-          });
         }
       }
 
