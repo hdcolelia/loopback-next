@@ -259,6 +259,47 @@ The list of options can be found in the
 By default, the `limit` is `1MB`. Any request with a body length exceeding the
 limit will be rejected with http status code 413 (request entity too large).
 
+In some cases, a controller method wants to handle request body parsing by
+itself, such as, to accept `multipart/form-data` for file uploads or stream-line
+a large json document. To bypass body parsing, the 'x-skip-body-parsing'
+extension can be set to `true` for a media type of the request body content. For
+example,
+
+```ts
+class FileUploadController {
+  async upload(
+    @requestBody({
+      description: 'multipart/form-data value.',
+      required: true,
+      content: {
+        'multipart/form-data': {
+          // Skip body parsing
+          'x-skip-body-parsing': true,
+          schema: {type: 'object'},
+        },
+      },
+    })
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<object> {
+    const storage = multer.memoryStorage();
+    const upload = multer({storage});
+    return new Promise<object>((resolve, reject) => {
+      upload.any()(request, response, err => {
+        if (err) reject(err);
+        else {
+          resolve({
+            files: request.files,
+            // tslint:disable-next-line:no-any
+            fields: (request as any).fields,
+          });
+        }
+      });
+    });
+  }
+}
+```
+
 A few tips worth mentioning:
 
 - If a model property's type refers to another model, make sure it is also
@@ -268,6 +309,51 @@ A few tips worth mentioning:
   request body specification in decorators like `route()` and
   [`api()`](Decorators.md#api-decorator), this requires you to provide a
   completed request body specification.
+
+#### Adding Parsers
+
+Request body parsers can be extended to support various media types. To add a
+new body parser, follow the steps below:
+
+1. Define a class that implements the `BodyParser` interface:
+
+```ts
+/**
+ * Interface to be implemented by body parser extensions
+ */
+export interface BodyParser {
+  /**
+   * Optional name of the parser for debugging
+   */
+  name?: string;
+  /**
+   * Indicate if the given media type is supported
+   * @param mediaType Media type
+   */
+  supports(mediaType: string): boolean;
+  /**
+   * Parse the request body
+   * @param request http request
+   */
+  parse(request: Request): Promise<RequestBody>;
+}
+```
+
+See an example at
+https://github.com/strongloop/loopback-next/blob/master/packages/rest/src/body-parsers/body-parser.json.ts.
+
+2. Bind the body parser class to your REST server/application:
+
+For example,
+
+```ts
+server.bodyParser(XmlBodyParser);
+```
+
+The `bodyParser` api binds `XmlBodyParser` to the context with:
+
+- key: `request.bodyParser.XmlBodyParser`
+- tag: `request.bodyParser`
 
 #### Localizing Errors
 
