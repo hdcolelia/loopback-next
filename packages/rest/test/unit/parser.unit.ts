@@ -62,6 +62,46 @@ describe('operationArgsParser', () => {
     expect(args).to.eql([{key: 'value'}]);
   });
 
+  it('parses body string as json', async () => {
+    const req = givenRequest({
+      url: '/',
+      payload: '"value"',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const spec = givenOperationWithRequestBody({
+      description: 'data',
+      content: {'application/json': {schema: {type: 'string'}}},
+    });
+    const route = givenResolvedRoute(spec);
+
+    const args = await parseOperationArgs(req, route, requestBodyParser);
+
+    expect(args).to.eql(['value']);
+  });
+
+  it('parses body number as json', async () => {
+    const req = givenRequest({
+      url: '/',
+      payload: '123',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const spec = givenOperationWithRequestBody({
+      description: 'data',
+      content: {'application/json': {schema: {type: 'number'}}},
+    });
+    const route = givenResolvedRoute(spec);
+
+    const args = await parseOperationArgs(req, route, requestBodyParser);
+
+    expect(args).to.eql([123]);
+  });
+
   it('parses body parameter for urlencoded', async () => {
     const req = givenRequest({
       url: '/',

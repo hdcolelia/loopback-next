@@ -23,7 +23,10 @@ export class JsonBodyParser implements BodyParser {
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
     options: RequestBodyParserOptions = {},
   ) {
-    const jsonOptions = getParserOptions('json', options);
+    const jsonOptions = Object.assign(
+      {strict: false},
+      getParserOptions('json', options),
+    );
     this.jsonParser = json(jsonOptions);
   }
 
