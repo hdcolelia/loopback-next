@@ -10,14 +10,14 @@ import {RestBindings} from '../keys';
 import {is} from 'type-is';
 import {RequestBody, BodyParser} from './types';
 import {
-  BodyParserWithCallback,
+  BodyParserMiddleware,
   getParserOptions,
-  parseRequest,
+  parseRequestBody,
 } from './body-parser.helpers';
 
 export class JsonBodyParser implements BodyParser {
   name = 'json';
-  private jsonParser: BodyParserWithCallback;
+  private jsonParser: BodyParserMiddleware;
 
   constructor(
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
@@ -32,7 +32,7 @@ export class JsonBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequest(this.jsonParser, request);
+    const body = await parseRequestBody(this.jsonParser, request);
     return {value: body};
   }
 }

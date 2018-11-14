@@ -259,47 +259,6 @@ The list of options can be found in the
 By default, the `limit` is `1MB`. Any request with a body length exceeding the
 limit will be rejected with http status code 413 (request entity too large).
 
-In some cases, a controller method wants to handle request body parsing by
-itself, such as, to accept `multipart/form-data` for file uploads or stream-line
-a large json document. To bypass body parsing, the 'x-skip-body-parsing'
-extension can be set to `true` for a media type of the request body content. For
-example,
-
-```ts
-class FileUploadController {
-  async upload(
-    @requestBody({
-      description: 'multipart/form-data value.',
-      required: true,
-      content: {
-        'multipart/form-data': {
-          // Skip body parsing
-          'x-skip-body-parsing': true,
-          schema: {type: 'object'},
-        },
-      },
-    })
-    request: Request,
-    @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<object> {
-    const storage = multer.memoryStorage();
-    const upload = multer({storage});
-    return new Promise<object>((resolve, reject) => {
-      upload.any()(request, response, err => {
-        if (err) reject(err);
-        else {
-          resolve({
-            files: request.files,
-            // tslint:disable-next-line:no-any
-            fields: (request as any).fields,
-          });
-        }
-      });
-    });
-  }
-}
-```
-
 A few tips worth mentioning:
 
 - If a model property's type refers to another model, make sure it is also
@@ -323,9 +282,9 @@ new body parser, follow the steps below:
  */
 export interface BodyParser {
   /**
-   * Optional name of the parser for debugging
+   * Name of the parser
    */
-  name?: string;
+  name: string;
   /**
    * Indicate if the given media type is supported
    * @param mediaType Media type
@@ -354,6 +313,79 @@ The `bodyParser` api binds `XmlBodyParser` to the context with:
 
 - key: `request.bodyParser.XmlBodyParser`
 - tag: `request.bodyParser`
+
+#### Specify Custom Parser by Controller Methods
+
+In some cases, a controller method wants to handle request body parsing by
+itself, such as, to accept `multipart/form-data` for file uploads or stream-line
+a large json document. To bypass body parsing, the `'x-parser'` extension can be
+set to `'stream'` for a media type of the request body content. For example,
+
+```ts
+class FileUploadController {
+  async upload(
+    @requestBody({
+      description: 'multipart/form-data value.',
+      required: true,
+      content: {
+        'multipart/form-data': {
+          // Skip body parsing
+          'x-parser': 'stream',
+          schema: {type: 'object'},
+        },
+      },
+    })
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<object> {
+    const storage = multer.memoryStorage();
+    const upload = multer({storage});
+    return new Promise<object>((resolve, reject) => {
+      upload.any()(request, response, err => {
+        if (err) reject(err);
+        else {
+          resolve({
+            files: request.files,
+            // tslint:disable-next-line:no-any
+            fields: (request as any).fields,
+          });
+        }
+      });
+    });
+  }
+}
+```
+
+The `x-parser` value can be one of the following:
+
+1. Name of the parser, such as `json` or `stream` (`stream` keeps the http
+   request as a stream without parsing).
+
+```ts
+{
+  'x-parser': 'stream'
+}
+```
+
+2. A body parser class
+
+```ts
+{
+  'x-parser': JsonBodyParser
+}
+```
+
+3. A body parser function, for example: `
+
+```ts
+function parseJson(request: Request) {
+  return new JsonBodyParser().parse(request);
+}
+
+{
+  'x-parser': parseJson
+}
+```
 
 #### Localizing Errors
 

@@ -11,14 +11,14 @@ import {is} from 'type-is';
 
 import {RequestBody, BodyParser} from './types';
 import {
-  BodyParserWithCallback,
+  BodyParserMiddleware,
   getParserOptions,
-  parseRequest,
+  parseRequestBody,
 } from './body-parser.helpers';
 
 export class UrlEncodedBodyParser implements BodyParser {
   name = 'urlencoded';
-  private urlencodedParser: BodyParserWithCallback;
+  private urlencodedParser: BodyParserMiddleware;
 
   constructor(
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
@@ -36,7 +36,7 @@ export class UrlEncodedBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequest(this.urlencodedParser, request);
+    const body = await parseRequestBody(this.urlencodedParser, request);
     return {value: body, coercionRequired: true};
   }
 }

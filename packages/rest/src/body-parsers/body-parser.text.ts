@@ -10,14 +10,14 @@ import {RestBindings} from '../keys';
 import {is} from 'type-is';
 import {RequestBody, BodyParser} from './types';
 import {
-  BodyParserWithCallback,
+  BodyParserMiddleware,
   getParserOptions,
-  parseRequest,
+  parseRequestBody,
 } from './body-parser.helpers';
 
 export class TextBodyParser implements BodyParser {
   name = 'text';
-  private textParser: BodyParserWithCallback;
+  private textParser: BodyParserMiddleware;
 
   constructor(
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
@@ -37,7 +37,7 @@ export class TextBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequest(this.textParser, request);
+    const body = await parseRequestBody(this.textParser, request);
     return {value: body};
   }
 }

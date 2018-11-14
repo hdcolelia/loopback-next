@@ -34,6 +34,7 @@ import {
   JsonBodyParser,
   TextBodyParser,
   UrlEncodedBodyParser,
+  StreamBodyParser,
 } from './body-parsers';
 
 export class RestComponent implements Component {
@@ -59,6 +60,7 @@ export class RestComponent implements Component {
     createBodyParserBinding(UrlEncodedBodyParser).inScope(
       BindingScope.SINGLETON,
     ),
+    createBodyParserBinding(StreamBodyParser).inScope(BindingScope.SINGLETON),
   ];
   servers: {
     [name: string]: Constructor<Server>;

@@ -62,7 +62,7 @@ describe('multipart/form-data', () => {
           content: {
             'multipart/form-data': {
               // Skip body parsing
-              'x-skip-body-parsing': true,
+              'x-parser': 'stream',
               schema: {type: 'object'},
             },
           },

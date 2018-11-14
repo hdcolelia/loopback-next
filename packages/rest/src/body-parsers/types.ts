@@ -33,9 +33,9 @@ export type RequestBody = {
  */
 export interface BodyParser {
   /**
-   * Optional name of the parser for debugging
+   * Name of the parser
    */
-  name?: string;
+  name: string;
   /**
    * Indicate if the given media type is supported
    * @param mediaType Media type
@@ -47,6 +47,11 @@ export interface BodyParser {
    */
   parse(request: Request): Promise<RequestBody>;
 }
+
+/**
+ * Plain function for body parsing
+ */
+export type BodyParserFunction = (request: Request) => Promise<RequestBody>;
 
 /**
  * Binding tag for request body parser extensions

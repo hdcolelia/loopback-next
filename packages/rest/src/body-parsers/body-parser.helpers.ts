@@ -21,10 +21,10 @@ export function getContentType(req: Request): string | undefined {
 /**
  * Express body parser function type
  */
-export type BodyParserWithCallback = (
+export type BodyParserMiddleware = (
   request: Request,
   response: Response,
-  callback: (err: HttpError) => void,
+  next: (err: HttpError) => void,
 ) => void;
 
 /**
@@ -42,12 +42,12 @@ export function normalizeParsingError(err: HttpError) {
 // tslint:disable:no-any
 
 /**
- * Parse the body asynchronously
+ * Parse the request body asynchronously
  * @param handle The express middleware handler
  * @param request Http request
  */
-export function parseRequest(
-  handle: BodyParserWithCallback,
+export function parseRequestBody(
+  handle: BodyParserMiddleware,
   request: Request,
 ): Promise<any> {
   // A hack to fool TypeScript as we don't need `response`
@@ -55,7 +55,7 @@ export function parseRequest(
   return new Promise<void>((resolve, reject) => {
     handle(request, response, err => {
       if (err) {
-        reject(normalizeParsingError(err));
+        reject(err);
         return;
       }
       resolve(request.body);

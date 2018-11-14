@@ -5,33 +5,50 @@
 
 import * as debugModule from 'debug';
 import {Request, RequestBodyParserOptions} from '../types';
-import {inject} from '@loopback/context';
+import {
+  inject,
+  Context,
+  instantiateClass,
+  Constructor,
+} from '@loopback/context';
 import {isReferenceObject, OperationObject} from '../..';
 import {is} from 'type-is';
 import {RestHttpErrors} from '../rest-http-error';
 
 const debug = debugModule('loopback:rest:body-parser');
 
-import {RequestBody, BodyParser, REQUEST_BODY_PARSER_TAG} from './types';
+import {
+  RequestBody,
+  BodyParser,
+  REQUEST_BODY_PARSER_TAG,
+  BodyParserFunction,
+} from './types';
 import {getContentType, normalizeParsingError} from './body-parser.helpers';
 import {RestBindings} from '../keys';
 import {JsonBodyParser} from './body-parser.json';
 import {UrlEncodedBodyParser} from './body-parser.urlencoded';
 import {TextBodyParser} from './body-parser.text';
+import {StreamBodyParser} from './body-parser.stream';
 
 export class RequestBodyParser {
+  private readonly parsers: BodyParser[];
+
   constructor(
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
     options: RequestBodyParserOptions = {},
     @inject.tag(REQUEST_BODY_PARSER_TAG, {optional: true})
-    private readonly parsers?: BodyParser[],
+    parsers?: BodyParser[],
+    @inject.context() private readonly ctx?: Context,
   ) {
     if (!parsers || parsers.length === 0) {
       this.parsers = [
         new JsonBodyParser(options),
         new UrlEncodedBodyParser(options),
         new TextBodyParser(options),
+        new StreamBodyParser(),
       ];
+    } else {
+      this.parsers = parsers;
     }
   }
 
@@ -71,10 +88,11 @@ export class RequestBodyParser {
         debug('Matched media type: %s -> %s', type, contentType);
         requestBody.mediaType = type;
         requestBody.schema = content[type].schema;
-        // Skip body parsing as the controller method wants to have full control
-        if (content[type]['x-skip-body-parsing']) {
-          requestBody.value = request;
-          return requestBody;
+        const customParser = content[type]['x-parser'];
+        if (customParser) {
+          // Invoke the custom parser
+          const body = await this.invokeParser(customParser, request);
+          if (body !== undefined) return Object.assign(requestBody, body);
         }
         break;
       }
@@ -89,7 +107,7 @@ export class RequestBodyParser {
     }
 
     try {
-      for (const parser of this.parsers || []) {
+      for (const parser of this.parsers) {
         if (!parser.supports(matchedMediaType)) {
           debug(
             'Body parser %s does not support %s',
@@ -112,4 +130,45 @@ export class RequestBodyParser {
 
     throw RestHttpErrors.unsupportedMediaType(matchedMediaType);
   }
+
+  /**
+   * Resolve and invoke a custom parser
+   * @param customParser The parser name, class or function
+   * @param request Http request
+   */
+  private async invokeParser(
+    customParser: string | Constructor<BodyParser> | BodyParserFunction,
+    request: Request,
+  ) {
+    if (typeof customParser === 'string') {
+      const parser = this.parsers.find(p => p.name === customParser);
+      if (parser) {
+        debug('Using custom parser %s', customParser);
+        return parser.parse(request);
+      }
+    } else if (typeof customParser === 'function') {
+      if (isBodyParserClass(customParser)) {
+        debug('Using custom parser class %s', customParser.name);
+        const parser = await instantiateClass<BodyParser>(
+          customParser as Constructor<BodyParser>,
+          this.ctx!,
+        );
+        return parser.parse(request);
+      } else {
+        debug('Using custom parser function %s', customParser.name);
+        return customParser(request);
+      }
+    }
+    throw new Error('Custom parser not found: ' + customParser);
+  }
+}
+
+/**
+ * Test if a function is a body parser class or plain function
+ * @param fn
+ */
+function isBodyParserClass(
+  fn: Constructor<BodyParser> | BodyParserFunction,
+): fn is Constructor<BodyParser> {
+  return fn.toString().startsWith('class ');
 }
