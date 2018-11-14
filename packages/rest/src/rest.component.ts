@@ -36,6 +36,7 @@ import {
   UrlEncodedBodyParser,
   StreamBodyParser,
 } from './body-parsers';
+import {RawBodyParser} from './body-parsers/body-parser.raw';
 
 export class RestComponent implements Component {
   providers: ProviderMap = {
@@ -60,6 +61,7 @@ export class RestComponent implements Component {
     createBodyParserBinding(UrlEncodedBodyParser).inScope(
       BindingScope.SINGLETON,
     ),
+    createBodyParserBinding(RawBodyParser).inScope(BindingScope.SINGLETON),
     createBodyParserBinding(StreamBodyParser).inScope(BindingScope.SINGLETON),
   ];
   servers: {

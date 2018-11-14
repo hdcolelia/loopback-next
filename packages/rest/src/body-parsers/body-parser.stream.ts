@@ -16,6 +16,7 @@ export class StreamBodyParser implements BodyParser {
 
   supports(mediaType: string) {
     // Return false so that it won't be used by matching
+    // only `x-parser: 'stream' will trigger this parser
     return false;
   }
 

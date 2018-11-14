@@ -468,6 +468,15 @@ describe('HttpHandler', () => {
       expect(res.body).to.eql({key: 'new-value', parser: 'json'});
     });
 
+    it('allows raw parser', async () => {
+      givenBodyParamController('json');
+      const res = await client
+        .post('/show-body')
+        .send({key: 'value'})
+        .expect(200);
+      expect(res.body).to.eql({key: 'new-value', parser: 'json'});
+    });
+
     it('allows custom parser by class', async () => {
       givenBodyParamController(JsonBodyParser);
       const res = await client
@@ -536,6 +545,9 @@ describe('HttpHandler', () => {
           }
           if (parser === 'json') {
             expect(request).to.eql({key: 'value'});
+          }
+          if (parser === 'raw') {
+            expect(request).to.be.instanceOf(Buffer);
           }
           const parserName = typeof parser === 'string' ? parser : parser.name;
           return {key: 'new-value', parser: parserName};

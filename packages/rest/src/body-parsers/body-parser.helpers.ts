@@ -7,7 +7,12 @@ import * as debugModule from 'debug';
 import {HttpError} from 'http-errors';
 import {Request, Response, RequestBodyParserOptions} from '../types';
 
-import {OptionsJson, OptionsUrlencoded, OptionsText} from 'body-parser';
+import {
+  OptionsJson,
+  OptionsUrlencoded,
+  OptionsText,
+  Options,
+} from 'body-parser';
 const debug = debugModule('loopback:rest:body-parser');
 
 /**
@@ -83,12 +88,17 @@ export function getParserOptions(
   type: 'text',
   options: RequestBodyParserOptions,
 ): OptionsText;
+export function getParserOptions(
+  type: 'raw',
+  options: RequestBodyParserOptions,
+): Options;
 
 export function getParserOptions(
-  type: 'json' | 'urlencoded' | 'text',
+  type: 'json' | 'urlencoded' | 'text' | 'raw',
   options: RequestBodyParserOptions,
 ) {
-  const opts: {[name: string]: any} = {limit: DEFAULT_LIMIT};
+  const mediaType = type === 'text' ? 'text/*' : type;
+  const opts: {[name: string]: any} = {type: mediaType, limit: DEFAULT_LIMIT};
   Object.assign(opts, options[type], options);
   for (const k of ['json', 'urlencoded', 'text']) {
     delete opts[k];

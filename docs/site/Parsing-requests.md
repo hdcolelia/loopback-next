@@ -358,8 +358,10 @@ class FileUploadController {
 
 The `x-parser` value can be one of the following:
 
-1. Name of the parser, such as `json` or `stream` (`stream` keeps the http
-   request as a stream without parsing).
+1. Name of the parser, such as `json`, `raw`, or `stream`
+
+- `stream`: keeps the http request body as a stream without parsing
+- `raw`: parses the http request body as a `Buffer`
 
 ```ts
 {

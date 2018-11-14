@@ -29,6 +29,7 @@ import {JsonBodyParser} from './body-parser.json';
 import {UrlEncodedBodyParser} from './body-parser.urlencoded';
 import {TextBodyParser} from './body-parser.text';
 import {StreamBodyParser} from './body-parser.stream';
+import {RawBodyParser} from './body-parser.raw';
 
 export class RequestBodyParser {
   private readonly parsers: BodyParser[];
@@ -46,6 +47,7 @@ export class RequestBodyParser {
         new UrlEncodedBodyParser(options),
         new TextBodyParser(options),
         new StreamBodyParser(),
+        new RawBodyParser(options),
       ];
     } else {
       this.parsers = parsers;
