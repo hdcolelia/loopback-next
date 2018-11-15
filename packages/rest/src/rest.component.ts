@@ -3,14 +3,23 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {Binding, BindingScope, Constructor, inject} from '@loopback/context';
 import {
+  Application,
   Component,
   CoreBindings,
   ProviderMap,
   Server,
-  Application,
 } from '@loopback/core';
-import {inject, Constructor, Binding, BindingScope} from '@loopback/context';
+import {createEmptyApiSpec} from '@loopback/openapi-v3-types';
+import {
+  JsonBodyParser,
+  RequestBodyParser,
+  StreamBodyParser,
+  TextBodyParser,
+  UrlEncodedBodyParser,
+} from './body-parsers';
+import {RawBodyParser} from './body-parsers/body-parser.raw';
 import {RestBindings} from './keys';
 import {
   BindElementProvider,
@@ -18,25 +27,16 @@ import {
   GetFromContextProvider,
   InvokeMethodProvider,
   LogErrorProvider,
-  RejectProvider,
   ParseParamsProvider,
+  RejectProvider,
   SendProvider,
 } from './providers';
 import {
+  createBodyParserBinding,
   RestServer,
   RestServerConfig,
-  createBodyParserBinding,
 } from './rest.server';
 import {DefaultSequence} from './sequence';
-import {createEmptyApiSpec} from '@loopback/openapi-v3-types';
-import {
-  RequestBodyParser,
-  JsonBodyParser,
-  TextBodyParser,
-  UrlEncodedBodyParser,
-  StreamBodyParser,
-} from './body-parsers';
-import {RawBodyParser} from './body-parsers/body-parser.raw';
 
 export class RestComponent implements Component {
   providers: ProviderMap = {
@@ -56,13 +56,26 @@ export class RestComponent implements Component {
     Binding.bind(RestBindings.REQUEST_BODY_PARSER)
       .toClass(RequestBodyParser)
       .inScope(BindingScope.SINGLETON),
-    createBodyParserBinding(JsonBodyParser).inScope(BindingScope.SINGLETON),
-    createBodyParserBinding(TextBodyParser).inScope(BindingScope.SINGLETON),
-    createBodyParserBinding(UrlEncodedBodyParser).inScope(
-      BindingScope.SINGLETON,
+    createBodyParserBinding(
+      JsonBodyParser,
+      RestBindings.REQUEST_BODY_PARSER_JSON,
     ),
-    createBodyParserBinding(RawBodyParser).inScope(BindingScope.SINGLETON),
-    createBodyParserBinding(StreamBodyParser).inScope(BindingScope.SINGLETON),
+    createBodyParserBinding(
+      TextBodyParser,
+      RestBindings.REQUEST_BODY_PARSER_TEXT,
+    ),
+    createBodyParserBinding(
+      UrlEncodedBodyParser,
+      RestBindings.REQUEST_BODY_PARSER_URLENCODED,
+    ),
+    createBodyParserBinding(
+      RawBodyParser,
+      RestBindings.REQUEST_BODY_PARSER_RAW,
+    ),
+    createBodyParserBinding(
+      StreamBodyParser,
+      RestBindings.REQUEST_BODY_PARSER_STREAM,
+    ),
   ];
   servers: {
     [name: string]: Constructor<Server>;

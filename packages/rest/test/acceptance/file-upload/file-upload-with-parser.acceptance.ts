@@ -13,6 +13,7 @@ import {
 import * as multer from 'multer';
 import * as path from 'path';
 import {
+  BodyParser,
   post,
   Request,
   requestBody,
@@ -20,8 +21,11 @@ import {
   RestApplication,
   RestBindings,
 } from '../../..';
+import {RequestBody} from '../../../src';
 
-describe('multipart/form-data', () => {
+const FORM_DATA = 'multipart/form-data';
+
+describe('multipart/form-data parser', () => {
   let client: Client;
   let app: RestApplication;
   before(givenAClient);
@@ -37,13 +41,13 @@ describe('multipart/form-data', () => {
       .field('email', 'john@example.com')
       .attach('certFile', path.resolve(FIXTURES, 'cert.pem'), {
         filename: 'cert.pem',
-        contentType: 'multipart/form-data',
+        contentType: FORM_DATA,
       })
       .expect(200);
     expect(res.body.files[0]).containEql({
       fieldname: 'certFile',
       originalname: 'cert.pem',
-      mimetype: 'multipart/form-data',
+      mimetype: FORM_DATA,
     });
   });
 
@@ -67,37 +71,53 @@ describe('multipart/form-data', () => {
         description: 'multipart/form-data value.',
         required: true,
         content: {
-          'multipart/form-data': {
-            // Skip body parsing
-            'x-parser': 'stream',
+          [FORM_DATA]: {
             schema: {type: 'object'},
           },
         },
       })
-      request: Request,
+      body: unknown,
       @inject(RestBindings.Http.RESPONSE) response: Response,
-    ): Promise<Object> {
-      const storage = multer.memoryStorage();
-      const upload = multer({storage});
-      return new Promise<object>((resolve, reject) => {
-        upload.any()(request, response, err => {
-          if (err) reject(err);
-          else {
-            resolve({
-              files: request.files,
-              // tslint:disable-next-line:no-any
-              fields: (request as any).fields,
-            });
-          }
-        });
-      });
+    ) {
+      return body;
     }
   }
 
   async function givenAClient() {
     app = new RestApplication({rest: givenHttpServerConfig()});
+    app.bodyParser(MultipartFormDataBodyParser);
     app.controller(FileUploadController);
     await app.start();
     client = createRestAppClient(app);
   }
 });
+
+class MultipartFormDataBodyParser implements BodyParser {
+  name = FORM_DATA;
+
+  supports(mediaType: string) {
+    // The mediaType can be
+    // `multipart/form-data; boundary=--------------------------979177593423179356726653`
+    return mediaType.startsWith(FORM_DATA);
+  }
+
+  async parse(request: Request): Promise<RequestBody> {
+    const storage = multer.memoryStorage();
+    const upload = multer({storage});
+    return new Promise<RequestBody>((resolve, reject) => {
+      // tslint:disable-next-line:no-any
+      upload.any()(request, {} as any, err => {
+        if (err) reject(err);
+        else {
+          resolve({
+            value: {
+              files: request.files,
+              // tslint:disable-next-line:no-any
+              fields: (request as any).fields,
+            },
+          });
+        }
+      });
+    });
+  }
+}

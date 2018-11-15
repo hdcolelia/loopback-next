@@ -3,16 +3,16 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {
+  Options,
+  OptionsJson,
+  OptionsText,
+  OptionsUrlencoded,
+} from 'body-parser';
 import * as debugModule from 'debug';
 import {HttpError} from 'http-errors';
-import {Request, Response, RequestBodyParserOptions} from '../types';
+import {Request, RequestBodyParserOptions, Response} from '../types';
 
-import {
-  OptionsJson,
-  OptionsUrlencoded,
-  OptionsText,
-  Options,
-} from 'body-parser';
 const debug = debugModule('loopback:rest:body-parser');
 
 /**
@@ -51,7 +51,7 @@ export function normalizeParsingError(err: HttpError) {
  * @param handle The express middleware handler
  * @param request Http request
  */
-export function parseRequestBody(
+export function invokeBodyParserMiddleware(
   handle: BodyParserMiddleware,
   request: Request,
 ): Promise<any> {
@@ -97,11 +97,30 @@ export function getParserOptions(
   type: 'json' | 'urlencoded' | 'text' | 'raw',
   options: RequestBodyParserOptions,
 ) {
-  const mediaType = type === 'text' ? 'text/*' : type;
-  const opts: {[name: string]: any} = {type: mediaType, limit: DEFAULT_LIMIT};
+  const opts: {[name: string]: any} = {limit: DEFAULT_LIMIT};
+  switch (type) {
+    case 'json':
+      // Allow */json and */*+json
+      opts.type = ['*/json', '*/*+json'];
+      opts.strict = false;
+      break;
+    case 'urlencoded':
+      opts.type = type;
+      opts.extended = true;
+      break;
+    case 'text':
+      // Set media type to `text/*` to match `text/plain` or `text/html`
+      opts.type = 'text/*';
+      break;
+    case 'raw':
+      opts.type = 'application/octet-stream';
+      break;
+  }
   Object.assign(opts, options[type], options);
-  for (const k of ['json', 'urlencoded', 'text']) {
+  for (const k of ['json', 'urlencoded', 'text', 'raw']) {
     delete opts[k];
   }
   return opts;
 }
+
+export const BUILT_IN_PARSERS = ['json', 'urlencoded', 'text', 'raw', 'stream'];

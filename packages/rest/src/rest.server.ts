@@ -3,7 +3,14 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {Binding, Constructor, Context, inject} from '@loopback/context';
+import {
+  Binding,
+  Constructor,
+  Context,
+  inject,
+  BindingScope,
+  BindingAddress,
+} from '@loopback/context';
 import {Application, CoreBindings, Server} from '@loopback/core';
 import {HttpServer, HttpServerOptions} from '@loopback/http-server';
 import {getControllerSpec} from '@loopback/openapi-v3';
@@ -21,6 +28,7 @@ import {IncomingMessage, ServerResponse} from 'http';
 import {ServerOptions} from 'https';
 import {safeDump} from 'js-yaml';
 import {ServeStaticOptions} from 'serve-static';
+import {BodyParser, REQUEST_BODY_PARSER_TAG} from './body-parsers';
 import {HttpHandler} from './http-handler';
 import {RestBindings} from './keys';
 import {QUERY_NOT_PARSED} from './parser';
@@ -46,7 +54,6 @@ import {
   Response,
   Send,
 } from './types';
-import {BodyParser, REQUEST_BODY_PARSER_TAG} from './body-parsers';
 
 const debug = debugFactory('loopback:rest:server');
 
@@ -722,10 +729,16 @@ export class RestServer extends Context implements Server, HttpServerLike {
 
   /**
    * Bind a body parser to the server context
-   * @param bodyParserClass
+   * @param parserClass Body parser class
+   * @param address Optional binding address
    */
-  bodyParser(bodyParserClass: Constructor<BodyParser>) {
-    this.add(createBodyParserBinding(bodyParserClass));
+  bodyParser(
+    bodyParserClass: Constructor<BodyParser>,
+    address?: BindingAddress<BodyParser>,
+  ): Binding<BodyParser> {
+    const binding = createBodyParserBinding(bodyParserClass, address);
+    this.add(binding);
+    return binding;
   }
 
   /**
@@ -788,12 +801,18 @@ export class RestServer extends Context implements Server, HttpServerLike {
 
 /**
  * Create a binding for the given body parser class
- * @param parserClass
+ * @param parserClass Body parser class
+ * @param address Optional binding address
  */
-export function createBodyParserBinding(parserClass: Constructor<BodyParser>) {
-  const key = `${RestBindings.REQUEST_BODY_PARSER}.${parserClass.name}`;
-  return Binding.bind(key)
+export function createBodyParserBinding(
+  parserClass: Constructor<BodyParser>,
+  address?: BindingAddress<BodyParser>,
+): Binding<BodyParser> {
+  const key =
+    address || `${RestBindings.REQUEST_BODY_PARSER}.${parserClass.name}`;
+  return Binding.bind<BodyParser>(key)
     .toClass(parserClass)
+    .inScope(BindingScope.SINGLETON)
     .tag(REQUEST_BODY_PARSER_TAG);
 }
 

@@ -3,17 +3,17 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions, Request} from '../types';
-import {text} from 'body-parser';
 import {inject} from '@loopback/context';
-import {RestBindings} from '../keys';
+import {text} from 'body-parser';
 import {is} from 'type-is';
-import {RequestBody, BodyParser} from './types';
+import {RestBindings} from '../keys';
+import {Request, RequestBodyParserOptions} from '../types';
 import {
   BodyParserMiddleware,
   getParserOptions,
-  parseRequestBody,
+  invokeBodyParserMiddleware,
 } from './body-parser.helpers';
+import {BodyParser, RequestBody} from './types';
 
 export class TextBodyParser implements BodyParser {
   name = 'text';
@@ -37,7 +37,7 @@ export class TextBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequestBody(this.textParser, request);
+    const body = await invokeBodyParserMiddleware(this.textParser, request);
     return {value: body};
   }
 }

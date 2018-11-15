@@ -298,7 +298,26 @@ export interface BodyParser {
 }
 ```
 
-See an example at
+A body parser implementation class will be instantiated by the LoopBack runtime
+within the context and it can leverage dependency injections. For example:
+
+```ts
+export class JsonBodyParser implements BodyParser {
+  name = 'json';
+  private jsonParser: BodyParserMiddleware;
+
+  constructor(
+    @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
+    options: RequestBodyParserOptions = {},
+  ) {
+    const jsonOptions = getParserOptions('json', options);
+    this.jsonParser = json(jsonOptions);
+  }
+  // ...
+}
+```
+
+See the complete code at
 https://github.com/strongloop/loopback-next/blob/master/packages/rest/src/body-parsers/body-parser.json.ts.
 
 2. Bind the body parser class to your REST server/application:
@@ -377,10 +396,10 @@ The `x-parser` value can be one of the following:
 }
 ```
 
-3. A body parser function, for example: `
+3. A body parser function, for example:
 
 ```ts
-function parseJson(request: Request) {
+function parseJson(request: Request): Promise<RequestBody> {
   return new JsonBodyParser().parse(request);
 }
 

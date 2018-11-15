@@ -13,12 +13,12 @@ import {
 import * as debugModule from 'debug';
 import * as parseUrl from 'parseurl';
 import {parse as parseQuery} from 'qs';
+import {RequestBody, RequestBodyParser} from './body-parsers';
 import {coerceParameter} from './coercion/coerce-parameter';
 import {RestHttpErrors} from './rest-http-error';
 import {ResolvedRoute} from './router';
 import {OperationArgs, PathParameterValues, Request} from './types';
 import {validateRequestBody} from './validation/request-body.validator';
-import {RequestBodyParser, RequestBody} from './body-parsers';
 
 const debug = debugModule('loopback:rest:parser');
 

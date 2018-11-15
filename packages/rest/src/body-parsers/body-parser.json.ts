@@ -3,17 +3,17 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions, Request} from '../types';
-import {json} from 'body-parser';
 import {inject} from '@loopback/context';
-import {RestBindings} from '../keys';
+import {json} from 'body-parser';
 import {is} from 'type-is';
-import {RequestBody, BodyParser} from './types';
+import {RestBindings} from '../keys';
+import {Request, RequestBodyParserOptions} from '../types';
 import {
   BodyParserMiddleware,
   getParserOptions,
-  parseRequestBody,
+  invokeBodyParserMiddleware,
 } from './body-parser.helpers';
+import {BodyParser, RequestBody} from './types';
 
 export class JsonBodyParser implements BodyParser {
   name = 'json';
@@ -23,19 +23,16 @@ export class JsonBodyParser implements BodyParser {
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
     options: RequestBodyParserOptions = {},
   ) {
-    const jsonOptions = Object.assign(
-      {strict: false},
-      getParserOptions('json', options),
-    );
+    const jsonOptions = getParserOptions('json', options);
     this.jsonParser = json(jsonOptions);
   }
 
   supports(mediaType: string) {
-    return !!is(mediaType, 'json');
+    return !!is(mediaType, '*/json', '*/*+json');
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequestBody(this.jsonParser, request);
+    const body = await invokeBodyParserMiddleware(this.jsonParser, request);
     return {value: body};
   }
 }

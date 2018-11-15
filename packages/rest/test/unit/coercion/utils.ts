@@ -12,10 +12,10 @@ import {
   parseOperationArgs,
   PathParameterValues,
   Request,
+  RequestBodyParser,
   ResolvedRoute,
   Route,
 } from '../../..';
-import {RequestBodyParser} from '../../../src';
 
 function givenOperationWithParameters(params?: ParameterObject[]) {
   return <OperationObject>{

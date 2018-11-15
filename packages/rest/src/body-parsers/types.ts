@@ -3,7 +3,8 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {SchemaObject, ReferenceObject, Request} from '../..';
+import {ReferenceObject, SchemaObject} from '@loopback/openapi-v3-types';
+import {Request} from '../types';
 /**
  * Request body with metadata
  */

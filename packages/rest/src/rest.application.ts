@@ -3,7 +3,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {Binding, Constructor} from '@loopback/context';
+import {Binding, Constructor, BindingAddress} from '@loopback/context';
 import {Application, ApplicationConfig, Server} from '@loopback/core';
 import {OpenApiSpec, OperationObject} from '@loopback/openapi-v3-types';
 import {PathParams} from 'express-serve-static-core';
@@ -97,10 +97,14 @@ export class RestApplication extends Application implements HttpServerLike {
 
   /**
    * Bind a body parser to the server context
-   * @param bodyParserClass
+   * @param parserClass Body parser class
+   * @param address Optional binding address
    */
-  bodyParser(bodyParserClass: Constructor<BodyParser>) {
-    this.restServer.bodyParser(bodyParserClass);
+  bodyParser(
+    bodyParserClass: Constructor<BodyParser>,
+    address?: BindingAddress<BodyParser>,
+  ): Binding<BodyParser> {
+    return this.restServer.bodyParser(bodyParserClass, address);
   }
 
   /**

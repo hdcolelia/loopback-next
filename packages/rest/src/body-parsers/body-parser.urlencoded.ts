@@ -3,18 +3,17 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions, Request} from '../types';
-import {urlencoded} from 'body-parser';
 import {inject} from '@loopback/context';
-import {RestBindings} from '../keys';
+import {urlencoded} from 'body-parser';
 import {is} from 'type-is';
-
-import {RequestBody, BodyParser} from './types';
+import {RestBindings} from '../keys';
+import {Request, RequestBodyParserOptions} from '../types';
 import {
   BodyParserMiddleware,
   getParserOptions,
-  parseRequestBody,
+  invokeBodyParserMiddleware,
 } from './body-parser.helpers';
+import {BodyParser, RequestBody} from './types';
 
 export class UrlEncodedBodyParser implements BodyParser {
   name = 'urlencoded';
@@ -24,10 +23,7 @@ export class UrlEncodedBodyParser implements BodyParser {
     @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
     options: RequestBodyParserOptions = {},
   ) {
-    const urlencodedOptions = Object.assign(
-      {extended: true},
-      getParserOptions('urlencoded', options),
-    );
+    const urlencodedOptions = getParserOptions('urlencoded', options);
     this.urlencodedParser = urlencoded(urlencodedOptions);
   }
 
@@ -36,7 +32,10 @@ export class UrlEncodedBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequestBody(this.urlencodedParser, request);
+    const body = await invokeBodyParserMiddleware(
+      this.urlencodedParser,
+      request,
+    );
     return {value: body, coercionRequired: true};
   }
 }

@@ -449,40 +449,28 @@ describe('HttpHandler', () => {
     }
   });
 
-  context('x-skip-body-parsing', () => {
+  context('x-parser extension', () => {
     it('skips body parsing', async () => {
       givenBodyParamController('stream');
-      const res = await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
+      const res = await postRequest();
       expect(res.body).to.eql({key: 'new-value', parser: 'stream'});
     });
 
     it('allows custom parser by name', async () => {
       givenBodyParamController('json');
-      const res = await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
+      const res = await postRequest();
       expect(res.body).to.eql({key: 'new-value', parser: 'json'});
     });
 
     it('allows raw parser', async () => {
       givenBodyParamController('json');
-      const res = await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
+      const res = await postRequest();
       expect(res.body).to.eql({key: 'new-value', parser: 'json'});
     });
 
     it('allows custom parser by class', async () => {
       givenBodyParamController(JsonBodyParser);
-      const res = await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
+      const res = await postRequest();
       expect(res.body).to.eql({key: 'new-value', parser: 'JsonBodyParser'});
     });
 
@@ -491,21 +479,25 @@ describe('HttpHandler', () => {
         return new JsonBodyParser().parse(request);
       }
       givenBodyParamController(parseJson);
-      const res = await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
+      const res = await postRequest();
       expect(res.body).to.eql({key: 'new-value', parser: 'parseJson'});
     });
 
     it('reports error if custom parser not found', async () => {
-      logErrorsExcept(500);
+      logErrorsExcept(400);
       givenBodyParamController('xml');
       await client
         .post('/show-body')
         .send({key: 'value'})
-        .expect(500);
+        .expect(400);
     });
+
+    async function postRequest() {
+      return await client
+        .post('/show-body')
+        .send({key: 'value'})
+        .expect(200);
+    }
 
     function givenBodyParamController(parser: string | Function) {
       const spec = anOpenApiSpec()

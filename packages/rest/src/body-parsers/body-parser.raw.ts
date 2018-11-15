@@ -3,16 +3,16 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {RequestBodyParserOptions, Request} from '../types';
-import {raw} from 'body-parser';
 import {inject} from '@loopback/context';
+import {raw} from 'body-parser';
 import {RestBindings} from '../keys';
-import {RequestBody, BodyParser} from './types';
+import {Request, RequestBodyParserOptions} from '../types';
 import {
   BodyParserMiddleware,
   getParserOptions,
-  parseRequestBody,
+  invokeBodyParserMiddleware,
 } from './body-parser.helpers';
+import {BodyParser, RequestBody} from './types';
 
 /**
  * Parsing the request body into Buffer
@@ -30,13 +30,13 @@ export class RawBodyParser implements BodyParser {
   }
 
   supports(mediaType: string) {
-    // Return false so that it won't be used by matching
-    // only `x-parser: 'raw' will trigger this parser
+    // Return `false` to only allow `{x-parser: 'raw'} to trigger this parser
+    // It won't be used for
     return false;
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await parseRequestBody(this.rawParser, request);
+    const body = await invokeBodyParserMiddleware(this.rawParser, request);
     return {value: body};
   }
 }

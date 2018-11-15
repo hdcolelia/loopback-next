@@ -4,7 +4,7 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {Request} from '../types';
-import {RequestBody, BodyParser} from './types';
+import {BodyParser, RequestBody} from './types';
 
 /**
  * A special body parser to retain request stream as is.
