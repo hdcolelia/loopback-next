@@ -16,10 +16,15 @@ import {
   UrlEncodedBodyParser,
   TextBodyParser,
   StreamBodyParser,
-} from '../../src';
-import {RawBodyParser} from '../../src/body-parsers/body-parser.raw';
+  RawBodyParser,
+} from '../..';
+import {RequestBody} from '../../src';
+import {Context} from '@loopback/core';
 
 describe('body parser', () => {
+  const defaultSchema = {
+    type: 'object',
+  };
   let requestBodyParser: RequestBodyParser;
   before(givenRequestBodyParser);
 
@@ -68,9 +73,6 @@ describe('body parser', () => {
       payload: {key: 'value'},
     });
 
-    const defaultSchema = {
-      type: 'object',
-    };
     const spec = givenOperationWithRequestBody({
       description: 'data',
       content: {},
@@ -95,9 +97,6 @@ describe('body parser', () => {
       payload: {key: 'value'},
     });
 
-    const defaultSchema = {
-      type: 'object',
-    };
     const spec = givenOperationWithRequestBody({
       description: 'data',
       content: {'text/json': {schema: defaultSchema}},
@@ -122,9 +121,6 @@ describe('body parser', () => {
       payload: {key: 'value'},
     });
 
-    const defaultSchema = {
-      type: 'object',
-    };
     const spec = givenOperationWithRequestBody({
       description: 'data',
       content: {'application/x-xyz+json': {schema: defaultSchema}},
@@ -149,9 +145,6 @@ describe('body parser', () => {
       },
     });
 
-    const defaultSchema = {
-      type: 'object',
-    };
     const spec = givenOperationWithRequestBody({
       description: 'data',
       content: {},
@@ -176,9 +169,6 @@ describe('body parser', () => {
       },
     });
 
-    const defaultSchema = {
-      type: 'object',
-    };
     const spec = givenOperationWithRequestBody({
       description: 'data',
       content: {},
@@ -221,8 +211,142 @@ describe('body parser', () => {
     ]);
   });
 
+  it('normalizes parsing errors', async () => {
+    const options: RequestBodyParserOptions = {};
+    const bodyParser = new RequestBodyParser(options, [
+      {
+        name: 'xml',
+        supports: mediaType => true,
+        parse: async request => {
+          throw new Error('Not implemented');
+        },
+      },
+    ]);
+    const req = givenRequest({
+      url: '/',
+      payload: '<root>123</root>',
+      headers: {
+        'Content-Type': 'application/xml',
+      },
+    });
+
+    const spec = givenOperationWithRequestBody({
+      description: 'data',
+      content: {'application/xml': {schema: defaultSchema}},
+    });
+    return expect(
+      bodyParser.loadRequestBodyIfNeeded(spec, req),
+    ).to.be.rejectedWith({statusCode: 400, message: 'Not implemented'});
+  });
+
+  describe('x-parser extension', () => {
+    let spec: OperationObject;
+    let req: Request;
+    let requestBody: RequestBody;
+
+    it('skips body parsing', async () => {
+      await loadRequestBodyWithXStream('stream');
+      expect(requestBody).to.eql({
+        value: req,
+        mediaType: 'application/json',
+        schema: defaultSchema,
+      });
+    });
+
+    it('allows custom parser by name', async () => {
+      await loadRequestBodyWithXStream('json');
+      expect(requestBody).to.eql({
+        value: {key: 'value'},
+        mediaType: 'application/json',
+        schema: defaultSchema,
+      });
+    });
+
+    it('allows raw parser', async () => {
+      await loadRequestBodyWithXStream('raw');
+      expect(requestBody).to.eql({
+        value: Buffer.from(JSON.stringify({key: 'value'})),
+        mediaType: 'application/json',
+        schema: defaultSchema,
+      });
+    });
+
+    it('allows custom parser by class', async () => {
+      await loadRequestBodyWithXStream(JsonBodyParser);
+      expect(requestBody).to.eql({
+        value: {key: 'value'},
+        mediaType: 'application/json',
+        schema: defaultSchema,
+      });
+    });
+
+    it('allows custom parser by function', async () => {
+      function parseJson(request: Request) {
+        return new JsonBodyParser().parse(request);
+      }
+      await loadRequestBodyWithXStream(parseJson);
+      expect(requestBody).to.eql({
+        value: {key: 'value'},
+        mediaType: 'application/json',
+        schema: defaultSchema,
+      });
+    });
+
+    it('reports error if custom parser not found', async () => {
+      return expect(loadRequestBodyWithXStream('xml'))
+        .to.be.rejectedWith(/Custom parser not found\: xml/)
+        .catch(e => {});
+    });
+
+    async function loadRequestBodyWithXStream(parser: string | Function) {
+      spec = givenSpecWithXStream(parser);
+      req = givenShowBodyRequest();
+      requestBody = await requestBodyParser.loadRequestBodyIfNeeded(spec, req);
+      return requestBody;
+    }
+
+    function givenShowBodyRequest() {
+      return givenRequest({
+        url: '/show-body',
+        method: 'post',
+        payload: {key: 'value'},
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    function givenSpecWithXStream(parser: string | Function) {
+      return {
+        'x-operation-name': 'showBody',
+        requestBody: <RequestBodyObject>{
+          required: true,
+          content: {
+            'application/json': {
+              // Skip body parsing
+              'x-parser': parser,
+              schema: {type: 'object'},
+            },
+          },
+        },
+        responses: {
+          200: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                },
+              },
+            },
+            description: '',
+          },
+        },
+      };
+    }
+  });
+
   function givenRequestBodyParser() {
-    requestBodyParser = new RequestBodyParser();
+    requestBodyParser = new RequestBodyParser({}, undefined, new Context());
   }
 
   function givenOperationWithRequestBody(requestBody?: RequestBodyObject) {

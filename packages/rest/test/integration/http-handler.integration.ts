@@ -26,7 +26,6 @@ import {anOpenApiSpec, anOperationSpec} from '@loopback/openapi-spec-builder';
 import {createUnexpectedHttpErrorLogger} from '../helpers';
 import * as express from 'express';
 import {is} from 'type-is';
-import {JsonBodyParser} from '../../src';
 
 const SequenceActions = RestBindings.SequenceActions;
 
@@ -442,107 +441,6 @@ describe('HttpHandler', () => {
         async showBody(data: Object): Promise<Object> {
           bodyParamControllerInvoked = true;
           return data;
-        }
-      }
-
-      givenControllerClass(RouteParamController, spec);
-    }
-  });
-
-  context('x-parser extension', () => {
-    it('skips body parsing', async () => {
-      givenBodyParamController('stream');
-      const res = await postRequest();
-      expect(res.body).to.eql({key: 'new-value', parser: 'stream'});
-    });
-
-    it('allows custom parser by name', async () => {
-      givenBodyParamController('json');
-      const res = await postRequest();
-      expect(res.body).to.eql({key: 'new-value', parser: 'json'});
-    });
-
-    it('allows raw parser', async () => {
-      givenBodyParamController('json');
-      const res = await postRequest();
-      expect(res.body).to.eql({key: 'new-value', parser: 'json'});
-    });
-
-    it('allows custom parser by class', async () => {
-      givenBodyParamController(JsonBodyParser);
-      const res = await postRequest();
-      expect(res.body).to.eql({key: 'new-value', parser: 'JsonBodyParser'});
-    });
-
-    it('allows custom parser by function', async () => {
-      function parseJson(request: Request) {
-        return new JsonBodyParser().parse(request);
-      }
-      givenBodyParamController(parseJson);
-      const res = await postRequest();
-      expect(res.body).to.eql({key: 'new-value', parser: 'parseJson'});
-    });
-
-    it('reports error if custom parser not found', async () => {
-      logErrorsExcept(400);
-      givenBodyParamController('xml');
-      await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(400);
-    });
-
-    async function postRequest() {
-      return await client
-        .post('/show-body')
-        .send({key: 'value'})
-        .expect(200);
-    }
-
-    function givenBodyParamController(parser: string | Function) {
-      const spec = anOpenApiSpec()
-        .withOperation('post', '/show-body', {
-          'x-operation-name': 'showBody',
-          requestBody: <RequestBodyObject>{
-            required: true,
-            content: {
-              'application/json': {
-                // Skip body parsing
-                'x-parser': parser,
-                schema: {type: 'object'},
-              },
-            },
-          },
-          responses: {
-            200: {
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                  },
-                },
-              },
-              description: '',
-            },
-          },
-        })
-        .build();
-
-      class RouteParamController {
-        // tslint:disable-next-line:no-any
-        async showBody(request: any): Promise<object> {
-          if (parser === 'stream') {
-            // Request body parsing is skipped
-            expect(request.body).to.be.undefined();
-          }
-          if (parser === 'json') {
-            expect(request).to.eql({key: 'value'});
-          }
-          if (parser === 'raw') {
-            expect(request).to.be.instanceOf(Buffer);
-          }
-          const parserName = typeof parser === 'string' ? parser : parser.name;
-          return {key: 'new-value', parser: parserName};
         }
       }
 

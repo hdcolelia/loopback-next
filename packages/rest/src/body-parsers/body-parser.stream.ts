@@ -8,15 +8,15 @@ import {BodyParser, RequestBody} from './types';
 
 /**
  * A special body parser to retain request stream as is.
- * It will be used by explicitly set `x-parser` to `'stream'` in the request
+ * It will be used by explicitly setting `x-parser` to `'stream'` in the request
  * body spec.
  */
 export class StreamBodyParser implements BodyParser {
   name = 'stream';
 
   supports(mediaType: string) {
-    // Return false so that it won't be used by matching
-    // only `x-parser: 'stream' will trigger this parser
+    // Return `false` so that this parser can only be trigged by the
+    // `{x-parser: 'stream'}` extension in the request body spec
     return false;
   }
 

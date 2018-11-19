@@ -9,3 +9,4 @@ export * from './body-parser.json';
 export * from './body-parser.text';
 export * from './body-parser.urlencoded';
 export * from './body-parser.stream';
+export * from './body-parser.raw';

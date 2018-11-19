@@ -21,6 +21,9 @@ import {
 describe('request parsing', () => {
   let client: Client;
   let app: RestApplication;
+  // tslint:disable-next-line:no-any
+  let parsedRequestBodyValue: any;
+
   beforeEach(givenAClient);
   afterEach(async () => {
     await app.stop();
@@ -77,11 +80,13 @@ describe('request parsing', () => {
   }
 
   async function postRequest(url = '/show-body', expectedStatusCode = 200) {
-    return await client
+    const res = await client
       .post(url)
       .set('Content-Type', 'application/json')
       .send({key: 'value'})
       .expect(expectedStatusCode);
+    expect(parsedRequestBodyValue).to.eql({key: 'value'});
+    return res;
   }
 
   function givenBodyParamController(url: string, parser?: string | Function) {
@@ -114,15 +119,9 @@ describe('request parsing', () => {
         request: // tslint:disable-next-line:no-any
         any,
       ): Promise<object> {
+        parsedRequestBodyValue = request;
         if (parser === 'stream') {
-          // Request body parsing is skipped
-          expect(request.body).to.be.undefined();
-        }
-        if (parser === 'json') {
-          expect(request).to.containEql({key: 'value'});
-        }
-        if (parser === 'raw') {
-          expect(request).to.be.instanceOf(Buffer);
+          parsedRequestBodyValue = request.body;
         }
         const parserName =
           typeof parser === 'string' ? parser : parser && parser.name;

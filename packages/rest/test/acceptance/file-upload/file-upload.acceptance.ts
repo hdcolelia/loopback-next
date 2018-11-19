@@ -35,14 +35,14 @@ describe('multipart/form-data', () => {
       .post('/show-body')
       .field('user', 'john')
       .field('email', 'john@example.com')
-      .attach('certFile', path.resolve(FIXTURES, 'cert.pem'), {
-        filename: 'cert.pem',
+      .attach('testFile', path.resolve(FIXTURES, 'file-upload-test.txt'), {
+        filename: 'file-upload-test.txt',
         contentType: 'multipart/form-data',
       })
       .expect(200);
     expect(res.body.files[0]).containEql({
-      fieldname: 'certFile',
-      originalname: 'cert.pem',
+      fieldname: 'testFile',
+      originalname: 'file-upload-test.txt',
       mimetype: 'multipart/form-data',
     });
   });

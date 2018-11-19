@@ -5,6 +5,7 @@
 
 import {inject} from '@loopback/context';
 import {raw} from 'body-parser';
+import {is} from 'type-is';
 import {RestBindings} from '../keys';
 import {Request, RequestBodyParserOptions} from '../types';
 import {
@@ -30,9 +31,7 @@ export class RawBodyParser implements BodyParser {
   }
 
   supports(mediaType: string) {
-    // Return `false` to only allow `{x-parser: 'raw'} to trigger this parser
-    // It won't be used for
-    return false;
+    return !!is(mediaType, 'application/octet-stream');
   }
 
   async parse(request: Request): Promise<RequestBody> {

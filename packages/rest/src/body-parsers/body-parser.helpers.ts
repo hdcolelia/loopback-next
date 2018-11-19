@@ -113,7 +113,7 @@ export function getParserOptions(
       opts.type = 'text/*';
       break;
     case 'raw':
-      opts.type = 'application/octet-stream';
+      opts.type = ['application/octet-stream', '*/*'];
       break;
   }
   Object.assign(opts, options[type], options);

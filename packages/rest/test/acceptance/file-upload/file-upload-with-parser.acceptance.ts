@@ -3,7 +3,6 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {inject} from '@loopback/context';
 import {
   Client,
   createRestAppClient,
@@ -17,11 +16,9 @@ import {
   post,
   Request,
   requestBody,
-  Response,
+  RequestBody,
   RestApplication,
-  RestBindings,
 } from '../../..';
-import {RequestBody} from '../../../src';
 
 const FORM_DATA = 'multipart/form-data';
 
@@ -39,14 +36,14 @@ describe('multipart/form-data parser', () => {
       .post('/show-body')
       .field('user', 'john')
       .field('email', 'john@example.com')
-      .attach('certFile', path.resolve(FIXTURES, 'cert.pem'), {
-        filename: 'cert.pem',
+      .attach('testFile', path.resolve(FIXTURES, 'file-upload-test.txt'), {
+        filename: 'file-upload-test.txt',
         contentType: FORM_DATA,
       })
       .expect(200);
     expect(res.body.files[0]).containEql({
-      fieldname: 'certFile',
-      originalname: 'cert.pem',
+      fieldname: 'testFile',
+      originalname: 'file-upload-test.txt',
       mimetype: FORM_DATA,
     });
   });
@@ -77,7 +74,6 @@ describe('multipart/form-data parser', () => {
         },
       })
       body: unknown,
-      @inject(RestBindings.Http.RESPONSE) response: Response,
     ) {
       return body;
     }

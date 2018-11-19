@@ -74,20 +74,13 @@ export class RequestBodyParser {
       if (customParser) {
         // Invoke the custom parser
         const body = await this._invokeCustomParser(customParser, request);
-        if (body !== undefined) return Object.assign(requestBody, body);
-      }
-      for (const parser of this.parsers) {
-        if (!parser.supports(matchedMediaType)) {
-          debug(
-            'Body parser %s does not support %s',
-            parser.name,
-            matchedMediaType,
-          );
-          continue;
-        }
-        debug('Body parser %s found for %s', parser.name, matchedMediaType);
-        const body = await parser.parse(request);
         return Object.assign(requestBody, body);
+      } else {
+        const parser = this._findParser(matchedMediaType);
+        if (parser) {
+          const body = await parser.parse(request);
+          return Object.assign(requestBody, body);
+        }
       }
     } catch (err) {
       throw normalizeParsingError(err);
@@ -150,6 +143,25 @@ export class RequestBodyParser {
     }
 
     return {requestBody, customParser};
+  }
+
+  /**
+   * Find a body parser that supports the media type
+   * @param matchedMediaType Media type
+   */
+  private _findParser(matchedMediaType: string) {
+    for (const parser of this.parsers) {
+      if (!parser.supports(matchedMediaType)) {
+        debug(
+          'Body parser %s does not support %s',
+          parser.name,
+          matchedMediaType,
+        );
+        continue;
+      }
+      debug('Body parser %s found for %s', parser.name, matchedMediaType);
+      return parser;
+    }
   }
 
   /**
