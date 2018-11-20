@@ -35,6 +35,10 @@ is `migrateSchema`, which iterates over all registered repositories and asks
 them to migrate their schema. Repositories that do not support schema migrations
 are silently skipped.
 
+In the future, we would like to provide finer-grained control of database schema
+updates, learn more in the GitHub issue
+[#487 Database Migration Management Framework](https://github.com/strongloop/loopback-next/issues/487)
+
 ### Auto-update database at start
 
 To automatically update the database schema whenever the application is started,
@@ -89,6 +93,35 @@ your database by running `node dist/src/migrate` and rebuild it from scratch by
 running `node dist/src/migrate --rebuild`. It is also possible to save this
 commands as `npm` scripts in your `package.json` file.
 
-In the future, we would like to provide finer-grained control of database schema
-updates, learn more in the GitHub issue
-[#487 Database Migration Management Framework](https://github.com/strongloop/loopback-next/issues/487)
+### Implement additional migration steps
+
+In some scenarios, the application may need to define additional schema
+constraints or seed the databse with predefined model instances. This can be
+achieved by overriding the `migrateSchema` method provided by the mixin.
+
+The example below shows how to do so in our Todo example application.
+
+{% include code-caption.html content="src/application.ts" %}
+
+```ts
+export class TodoListApplication extends BootMixin(
+  ServiceMixin(RepositoryMixin(RestApplication)),
+) {
+  // skipped: the constructor, etc.
+
+  async migrateSchema(options?: SchemaMigrationOptions) {
+    // 1. Run migration scripts provided by connectors
+    await super.migrateSchema(options);
+
+    // 2. Make further changes. When creating predefined model instances,
+    // handle the case when these instances already exist.
+    const todoRepo = await this.getRepository(TodoRepository);
+    const found = await todoRepo.findOne({where: {title: 'welcome'}});
+    if (found) {
+      todoRepo.updateById(found.id, {isComplete: false});
+    } else {
+      await todoRepo.create({title: 'welcome', isComplete: false});
+    }
+  }
+}
+```
