@@ -3,10 +3,16 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {expect} from '@loopback/testlab';
-
-import {juggler, RepositoryMixin, Class, Repository} from '../../../';
 import {Application, Component} from '@loopback/core';
+import {expect, sinon} from '@loopback/testlab';
+import {
+  Class,
+  juggler,
+  MigrateableRepository,
+  Model,
+  Repository,
+  RepositoryMixin,
+} from '../../../';
 
 // tslint:disable:no-any
 
@@ -61,6 +67,30 @@ describe('RepositoryMixin', () => {
 
     expectComponentToBeBound(myApp, TestComponent);
     expectNoteRepoToBeBound(myApp);
+  });
+
+  context('migrateSchema', () => {
+    it('is a method provided by the mixin', () => {
+      const myApp = new AppWithRepoMixin();
+      expect(typeof myApp.migrateSchema).to.be.eql('function');
+    });
+
+    it('it migrates all migrateable repositories', async () => {
+      const app = new AppWithRepoMixin();
+
+      const migrateStub = sinon.stub().resolves();
+      class MigrateableRepo implements MigrateableRepository<Model> {
+        migrateSchema = migrateStub;
+      }
+      app.repository(MigrateableRepo);
+
+      class OtherRepo implements Repository<Model> {}
+      app.repository(OtherRepo);
+
+      await app.migrateSchema({rebuild: true});
+
+      sinon.assert.calledWith(migrateStub, {rebuild: true});
+    });
   });
 
   class AppWithRepoMixin extends RepositoryMixin(Application) {}

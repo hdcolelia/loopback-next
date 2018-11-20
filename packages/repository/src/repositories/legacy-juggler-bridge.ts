@@ -28,6 +28,10 @@ import {
 } from '../relations';
 import {resolveType} from '../type-resolver';
 import {EntityCrudRepository} from './repository';
+import {
+  MigrateableRepository,
+  SchemaMigrationOptions,
+} from './migrateable.repository';
 
 export namespace juggler {
   export import DataSource = legacy.DataSource;
@@ -75,7 +79,7 @@ export function ensurePromise<T>(p: legacy.PromiseOrVoid<T>): Promise<T> {
  * and data source
  */
 export class DefaultCrudRepository<T extends Entity, ID>
-  implements EntityCrudRepository<T, ID> {
+  implements EntityCrudRepository<T, ID>, MigrateableRepository<T> {
   modelClass: juggler.PersistedModelClass;
 
   /**
@@ -331,5 +335,10 @@ export class DefaultCrudRepository<T extends Entity, ID>
 
   protected toEntities(models: juggler.PersistedModel[]): T[] {
     return models.map(m => this.toEntity(m));
+  }
+
+  async migrateSchema(options?: SchemaMigrationOptions): Promise<void> {
+    const operation = options && options.rebuild ? 'automigrate' : 'autoupdate';
+    await this.dataSource[operation](this.modelClass.modelName);
   }
 }

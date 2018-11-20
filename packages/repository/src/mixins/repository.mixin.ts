@@ -3,11 +3,18 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {Class} from '../common-types';
-import {Repository} from '../repositories/repository';
-import {juggler} from '../repositories/legacy-juggler-bridge';
-import {Application} from '@loopback/core';
 import {BindingScope} from '@loopback/context';
+import {Application} from '@loopback/core';
+import * as debugFactory from 'debug';
+import {Class} from '../common-types';
+import {
+  isMigrateableRepository,
+  juggler,
+  Repository,
+  SchemaMigrationOptions,
+} from '../repositories';
+
+const debug = debugFactory('loopback:repository:mixin');
 
 /**
  * A mixin class for Application that creates a .repository()
@@ -163,6 +170,34 @@ export function RepositoryMixin<T extends Class<any>>(superClass: T) {
         }
       }
     }
+
+    /**
+     * Update or recreate the database schema for all repositories.
+     *
+     * **WARNING**: By default, `migrateSchema()` will attempt to preserve data
+     * while updating the schema in your target database, but this is not
+     * guaranteed to be safe.
+     *
+     * Please check the documentation for your specific connector(s) for
+     * a detailed breakdown of behaviors for automigrate!
+     *
+     * @param options Migration options, e.g. whether to update tables
+     * preserving data or rebuild everything from scratch.
+     */
+    async migrateSchema(options?: SchemaMigrationOptions): Promise<void> {
+      const repoBindings = this.findByTag('repository');
+
+      for (const b of repoBindings) {
+        const repo = await this.get(b.key);
+
+        if (isMigrateableRepository(repo)) {
+          debug('Migrating repository %s', b.key);
+          await repo.migrateSchema(options);
+        } else {
+          debug('Skipping migration of repository %s', b.key);
+        }
+      }
+    }
   };
 }
 
@@ -180,6 +215,7 @@ export interface ApplicationWithRepositories extends Application {
   ): void;
   component(component: Class<{}>): void;
   mountComponentRepositories(component: Class<{}>): void;
+  migrateSchema(options?: SchemaMigrationOptions): Promise<void>;
 }
 
 /**
@@ -293,4 +329,19 @@ export class RepositoryMixinDoc {
    * @param component The component to mount repositories of
    */
   mountComponentRepository(component: Class<{}>) {}
+
+  /**
+   * Update or recreate the database schema for all repositories.
+   *
+   * **WARNING**: By default, `migrateSchema()` will attempt to preserve data
+   * while updating the schema in your target database, but this is not
+   * guaranteed to be safe.
+   *
+   * Please check the documentation for your specific connector(s) for
+   * a detailed breakdown of behaviors for automigrate!
+   *
+   * @param options Migration options, e.g. whether to update tables
+   * preserving data or rebuild everything from scratch.
+   */
+  async migrateSchema(options?: SchemaMigrationOptions): Promise<void> {}
 }
