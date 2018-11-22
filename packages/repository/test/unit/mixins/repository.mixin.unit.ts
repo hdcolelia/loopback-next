@@ -3,17 +3,18 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {Application, Component, BindingScope} from '@loopback/core';
+import {Application, BindingScope, Component} from '@loopback/core';
 import {expect, sinon} from '@loopback/testlab';
 import {
   Class,
+  DataSource,
+  DefaultCrudRepository,
+  Entity,
   juggler,
+  ModelDefinition,
   Repository,
   RepositoryMixin,
-  DataSource,
-  Entity,
-} from '../../../';
-import {DefaultCrudRepository, ModelDefinition} from '../../../src';
+} from '../../..';
 
 // tslint:disable:no-any
 
@@ -115,9 +116,10 @@ describe('RepositoryMixin', () => {
         .inScope(BindingScope.SINGLETON);
 
       await app.migrateSchema({dropExistingSchema: true});
+      // the test passes when migrateSchema() does not throw any error
     });
 
-    it('ensures models are attached to datasources', async () => {
+    it('attaches all models to datasources', async () => {
       let modelsMigrated = ['no models were migrated'];
 
       const ds = new juggler.DataSource({name: 'db', connector: 'memory'});
