@@ -36,9 +36,18 @@ export class TodoListApplication extends BootMixin(
     super(options);
 
     // ...
-
-    this.static('/', path.join(__dirname, '../../public'));
   }
+  
+  // HDC - BEGIN
+  // It is important that static to be called after app starts
+  // that way other toutes as Controllers could be found...
+  
+  async start(): Promise<void> {
+    await super.start();
+    // Importante!!! -- llamarlo acá
+    await this.static('/', path.join(__dirname, '../../public'));
+  }
+  // HDC - END
 }
 ```
 
