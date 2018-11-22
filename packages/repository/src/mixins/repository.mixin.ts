@@ -3,16 +3,12 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {BindingScope} from '@loopback/context';
+import {BindingScope, Binding} from '@loopback/context';
 import {Application} from '@loopback/core';
 import * as debugFactory from 'debug';
 import {Class} from '../common-types';
-import {
-  isMigrateableRepository,
-  juggler,
-  Repository,
-  SchemaMigrationOptions,
-} from '../repositories';
+import {juggler, Repository} from '../repositories';
+import {SchemaMigrationOptions} from '../datasource';
 
 const debug = debugFactory('loopback:repository:mixin');
 
@@ -184,17 +180,30 @@ export function RepositoryMixin<T extends Class<any>>(superClass: T) {
      * @param options Migration options, e.g. whether to update tables
      * preserving data or rebuild everything from scratch.
      */
-    async migrateSchema(options?: SchemaMigrationOptions): Promise<void> {
-      const repoBindings = this.findByTag('repository');
+    async migrateSchema(options: SchemaMigrationOptions = {}): Promise<void> {
+      const operation = options.dropExistingSchema
+        ? 'automigrate'
+        : 'autoupdate';
 
-      for (const b of repoBindings) {
-        const repo = await this.get(b.key);
+      // Instantiate all repositories to ensure models are registered & attached
+      // to their datasources
+      const repoBindings: Readonly<Binding<unknown>>[] = this.findByTag(
+        'repository',
+      );
+      await Promise.all(repoBindings.map(b => this.get(b.key)));
 
-        if (isMigrateableRepository(repo)) {
-          debug('Migrating repository %s', b.key);
-          await repo.migrateSchema(options);
+      // Look up all datasources and update/migrate schemas one by one
+      const dsBindings: Readonly<Binding<object>>[] = this.findByTag(
+        'datasource',
+      );
+      for (const b of dsBindings) {
+        const ds = await this.get(b.key);
+
+        if (operation in ds && typeof ds[operation] === 'function') {
+          debug('Migrating dataSource %s', b.key);
+          await ds[operation]();
         } else {
-          debug('Skipping migration of repository %s', b.key);
+          debug('Skipping migration of dataSource %s', b.key);
         }
       }
     }

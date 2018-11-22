@@ -74,12 +74,12 @@ shown below.
 import {TodoListApplication} from './application';
 
 export async function migrate(args: string[]) {
-  const rebuild = args.includes('--rebuild');
+  const dropExistingTables = args.includes('--rebuild');
   console.log('Migrating schemas (%s)', rebuild ? 'rebuild' : 'update');
 
   const app = new TodoListApplication();
   await app.boot();
-  await app.migrateSchema({rebuild});
+  await app.migrateSchema({dropExistingTables});
 }
 
 migrate(process.argv).catch(err => {

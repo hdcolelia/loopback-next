@@ -9,7 +9,6 @@ import {
   DefaultCrudRepository,
   Entity,
   EntityNotFoundError,
-  isMigrateableRepository,
   juggler,
   ModelDefinition,
 } from '../../..';
@@ -324,51 +323,5 @@ describe('DefaultCrudRepository', () => {
     const note1 = await repo.create({title: 't3', content: 'c3'});
     const ok = await repo.exists(note1.id);
     expect(ok).to.be.true();
-  });
-
-  context('schema migration', () => {
-    it('provides migrateSchema() API', () => {
-      const repo = new DefaultCrudRepository(Note, ds);
-      expect(repo)
-        .to.have.property('migrateSchema')
-        .type('function');
-      expect(isMigrateableRepository(repo)).to.be.true();
-    });
-
-    it('performs non-destructive update by default ', async () => {
-      const repo = new DefaultCrudRepository(Note, ds);
-      const autoupdateStub = sinon.stub().resolves();
-      ds.autoupdate = autoupdateStub;
-
-      await repo.migrateSchema();
-
-      sinon.assert.calledWith(autoupdateStub, 'Note');
-    });
-
-    it('provides an option to perform destructive rebuild', async () => {
-      const repo = new DefaultCrudRepository(Note, ds);
-      const automigrateStub = sinon.stub().resolves();
-      ds.automigrate = automigrateStub;
-
-      await repo.migrateSchema({rebuild: true});
-
-      sinon.assert.calledWith(automigrateStub, 'Note');
-    });
-
-    it('succeeds when the connector does not implement autoupdate', async () => {
-      const repo = new DefaultCrudRepository(Note, ds);
-      // tslint:disable-next-line:no-any
-      (ds.connector as any).autoupdate = undefined;
-
-      await repo.migrateSchema();
-    });
-
-    it('succeeds when the connector does not implement automigrate', async () => {
-      const repo = new DefaultCrudRepository(Note, ds);
-      // tslint:disable-next-line:no-any
-      (ds.connector as any).automigrate = undefined;
-
-      await repo.migrateSchema({rebuild: true});
-    });
   });
 });
