@@ -12,19 +12,13 @@ import {
 import {isReferenceObject, OperationObject} from '@loopback/openapi-v3-types';
 import * as debugModule from 'debug';
 import {is} from 'type-is';
-import {RestBindings} from '../keys';
 import {RestHttpErrors} from '../rest-http-error';
-import {Request, RequestBodyParserOptions} from '../types';
+import {Request} from '../types';
 import {
+  builtinParsers,
   getContentType,
   normalizeParsingError,
-  BUILT_IN_PARSERS,
 } from './body-parser.helpers';
-import {JsonBodyParser} from './body-parser.json';
-import {RawBodyParser} from './body-parser.raw';
-import {StreamBodyParser} from './body-parser.stream';
-import {TextBodyParser} from './body-parser.text';
-import {UrlEncodedBodyParser} from './body-parser.urlencoded';
 import {
   BodyParser,
   BodyParserFunction,
@@ -38,23 +32,11 @@ export class RequestBodyParser {
   readonly parsers: BodyParser[];
 
   constructor(
-    @inject(RestBindings.REQUEST_BODY_PARSER_OPTIONS, {optional: true})
-    options: RequestBodyParserOptions = {},
     @inject.tag(REQUEST_BODY_PARSER_TAG, {optional: true})
     parsers?: BodyParser[],
     @inject.context() private readonly ctx?: Context,
   ) {
-    if (!parsers || parsers.length === 0) {
-      this.parsers = [
-        new JsonBodyParser(options),
-        new UrlEncodedBodyParser(options),
-        new TextBodyParser(options),
-        new StreamBodyParser(),
-        new RawBodyParser(options),
-      ];
-    } else {
-      this.parsers = sortParsers(parsers);
-    }
+    this.parsers = sortParsers(parsers || []);
     if (debug.enabled) {
       debug('Body parsers: ', this.parsers.map(p => p.name));
     }
@@ -174,7 +156,11 @@ export class RequestBodyParser {
     request: Request,
   ) {
     if (typeof customParser === 'string') {
-      const parser = this.parsers.find(p => p.name === customParser);
+      const parser = this.parsers.find(
+        p =>
+          p.name === customParser ||
+          p.name === builtinParsers.mapping[customParser],
+      );
       if (parser) {
         debug('Using custom parser %s', customParser);
         return parser.parse(request);
@@ -212,8 +198,8 @@ function isBodyParserClass(
  */
 function sortParsers(parsers: BodyParser[]) {
   return parsers.sort((a, b) => {
-    const i1 = BUILT_IN_PARSERS.indexOf(a.name);
-    const i2 = BUILT_IN_PARSERS.indexOf(b.name);
+    const i1 = builtinParsers.names.indexOf(a.name);
+    const i2 = builtinParsers.names.indexOf(b.name);
     return i1 - i2;
   });
 }

@@ -123,4 +123,26 @@ export function getParserOptions(
   return opts;
 }
 
-export const BUILT_IN_PARSERS = ['json', 'urlencoded', 'text', 'raw', 'stream'];
+export namespace builtinParsers {
+  export const json = Symbol('json');
+  export const urlencoded = Symbol('urlencoded');
+  export const text = Symbol('text');
+  export const raw = Symbol('raw');
+  export const stream = Symbol('stream');
+
+  export const names: (string | symbol)[] = [
+    json,
+    urlencoded,
+    text,
+    raw,
+    stream,
+  ];
+
+  export const mapping: {[name: string]: symbol} = {
+    json,
+    urlencoded,
+    text,
+    raw,
+    stream,
+  };
+}

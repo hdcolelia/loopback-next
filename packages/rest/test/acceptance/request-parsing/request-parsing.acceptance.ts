@@ -47,7 +47,7 @@ describe('request parsing', () => {
   it('invokes custom body parsers before built-in ones', async () => {
     let invoked = false;
     class MyJsonBodyParser extends JsonBodyParser {
-      name = 'my-json';
+      name = Symbol('my-json');
       async parse(request: Request) {
         const body = await super.parse(request);
         invoked = true;

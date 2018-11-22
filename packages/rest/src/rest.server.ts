@@ -802,15 +802,15 @@ export class RestServer extends Context implements Server, HttpServerLike {
 /**
  * Create a binding for the given body parser class
  * @param parserClass Body parser class
- * @param address Optional binding address
+ * @param key Optional binding address
  */
 export function createBodyParserBinding(
   parserClass: Constructor<BodyParser>,
-  address?: BindingAddress<BodyParser>,
+  key?: BindingAddress<BodyParser>,
 ): Binding<BodyParser> {
-  const key =
-    address || `${RestBindings.REQUEST_BODY_PARSER}.${parserClass.name}`;
-  return Binding.bind<BodyParser>(key)
+  const address =
+    key || `${RestBindings.REQUEST_BODY_PARSER}.${parserClass.name}`;
+  return Binding.bind<BodyParser>(address)
     .toClass(parserClass)
     .inScope(BindingScope.SINGLETON)
     .tag(REQUEST_BODY_PARSER_TAG);

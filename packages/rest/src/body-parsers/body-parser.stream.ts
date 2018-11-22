@@ -5,6 +5,7 @@
 
 import {Request} from '../types';
 import {BodyParser, RequestBody} from './types';
+import {builtinParsers} from './body-parser.helpers';
 
 /**
  * A special body parser to retain request stream as is.
@@ -12,7 +13,7 @@ import {BodyParser, RequestBody} from './types';
  * body spec.
  */
 export class StreamBodyParser implements BodyParser {
-  name = 'stream';
+  name = builtinParsers.stream;
 
   supports(mediaType: string) {
     // Return `false` so that this parser can only be trigged by the

@@ -93,7 +93,7 @@ export interface RequestBodyParserOptions extends Options {
   urlencoded?: OptionsUrlencoded;
   text?: OptionsText;
   raw?: Options;
-  [name: string]: any;
+  [name: string]: unknown;
 }
 
 export type PathParameterValues = {[key: string]: any};

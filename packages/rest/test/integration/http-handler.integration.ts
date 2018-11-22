@@ -3,29 +3,34 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {
-  HttpHandler,
-  DefaultSequence,
-  writeResultToResponse,
-  RestBindings,
-  FindRouteProvider,
-  InvokeMethodProvider,
-  RejectProvider,
-  ParseParamsProvider,
-  RequestBodyParser,
-  BodyParser,
-  Request,
-  REQUEST_BODY_PARSER_TAG,
-} from '../..';
-import {ControllerSpec, get} from '@loopback/openapi-v3';
 import {Context} from '@loopback/context';
-import {Client, createClientForHandler, expect} from '@loopback/testlab';
-import * as HttpErrors from 'http-errors';
-import {ParameterObject, RequestBodyObject} from '@loopback/openapi-v3-types';
 import {anOpenApiSpec, anOperationSpec} from '@loopback/openapi-spec-builder';
-import {createUnexpectedHttpErrorLogger} from '../helpers';
+import {ControllerSpec, get} from '@loopback/openapi-v3';
+import {ParameterObject, RequestBodyObject} from '@loopback/openapi-v3-types';
+import {Client, createClientForHandler, expect} from '@loopback/testlab';
 import * as express from 'express';
+import * as HttpErrors from 'http-errors';
 import {is} from 'type-is';
+import {
+  BodyParser,
+  createBodyParserBinding,
+  DefaultSequence,
+  FindRouteProvider,
+  HttpHandler,
+  InvokeMethodProvider,
+  JsonBodyParser,
+  ParseParamsProvider,
+  RawBodyParser,
+  RejectProvider,
+  Request,
+  RequestBodyParser,
+  RestBindings,
+  StreamBodyParser,
+  TextBodyParser,
+  UrlEncodedBodyParser,
+  writeResultToResponse,
+} from '../..';
+import {createUnexpectedHttpErrorLogger} from '../helpers';
 
 const SequenceActions = RestBindings.SequenceActions;
 
@@ -293,13 +298,13 @@ describe('HttpHandler', () => {
       logErrorsExcept(415);
       return client
         .post('/show-body')
-        .set('content-type', 'application/x-xml')
+        .set('content-type', 'text/plain')
         .send('<key>value</key>')
         .expect(415, {
           error: {
             code: 'UNSUPPORTED_MEDIA_TYPE',
             message:
-              'Content-type application/x-xml does not match [application/json' +
+              'Content-type text/plain does not match [application/json' +
               ',application/x-www-form-urlencoded,application/xml].',
             name: 'UnsupportedMediaTypeError',
             statusCode: 415,
@@ -371,11 +376,7 @@ describe('HttpHandler', () => {
       }
 
       // Register a request body parser for xml
-      rootContext
-        .bind('rest.requestBodyParsers.xml')
-        .toClass(XmlBodyParser)
-        // Make sure the tag is used
-        .tag(REQUEST_BODY_PARSER_TAG);
+      rootContext.add(createBodyParserBinding(XmlBodyParser));
 
       return client
         .post('/show-body')
@@ -623,6 +624,30 @@ describe('HttpHandler', () => {
     rootContext.bind(SequenceActions.REJECT).toProvider(RejectProvider);
 
     rootContext.bind(RestBindings.SEQUENCE).toClass(DefaultSequence);
+
+    [
+      createBodyParserBinding(
+        JsonBodyParser,
+        RestBindings.REQUEST_BODY_PARSER_JSON,
+      ),
+      createBodyParserBinding(
+        TextBodyParser,
+        RestBindings.REQUEST_BODY_PARSER_TEXT,
+      ),
+      createBodyParserBinding(
+        UrlEncodedBodyParser,
+        RestBindings.REQUEST_BODY_PARSER_URLENCODED,
+      ),
+      createBodyParserBinding(
+        RawBodyParser,
+        RestBindings.REQUEST_BODY_PARSER_RAW,
+      ),
+      createBodyParserBinding(
+        StreamBodyParser,
+        RestBindings.REQUEST_BODY_PARSER_STREAM,
+      ),
+    ].forEach(binding => rootContext.add(binding));
+
     rootContext
       .bind(RestBindings.REQUEST_BODY_PARSER)
       .toClass(RequestBodyParser);

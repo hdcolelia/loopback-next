@@ -12,11 +12,12 @@ import {
   BodyParserMiddleware,
   getParserOptions,
   invokeBodyParserMiddleware,
+  builtinParsers,
 } from './body-parser.helpers';
 import {BodyParser, RequestBody} from './types';
 
 export class TextBodyParser implements BodyParser {
-  name = 'text';
+  name = builtinParsers.text;
   private textParser: BodyParserMiddleware;
 
   constructor(

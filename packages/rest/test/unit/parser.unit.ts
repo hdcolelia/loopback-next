@@ -3,6 +3,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {Context} from '@loopback/core';
 import {
   OperationObject,
   ParameterObject,
@@ -16,12 +17,18 @@ import {
 } from '@loopback/testlab';
 import {
   createResolvedRoute,
+  JsonBodyParser,
   parseOperationArgs,
   PathParameterValues,
+  RawBodyParser,
   Request,
   RequestBodyParser,
+  RequestBodyParserOptions,
   RestHttpErrors,
   Route,
+  StreamBodyParser,
+  TextBodyParser,
+  UrlEncodedBodyParser,
 } from '../..';
 
 describe('operationArgsParser', () => {
@@ -354,7 +361,15 @@ describe('operationArgsParser', () => {
   });
 
   function givenRequestBodyParser() {
-    requestBodyParser = new RequestBodyParser();
+    const options: RequestBodyParserOptions = {};
+    const parsers = [
+      new JsonBodyParser(options),
+      new UrlEncodedBodyParser(options),
+      new TextBodyParser(options),
+      new StreamBodyParser(),
+      new RawBodyParser(options),
+    ];
+    requestBodyParser = new RequestBodyParser(parsers, new Context());
   }
 
   function givenOperationWithParameters(params?: ParameterObject[]) {

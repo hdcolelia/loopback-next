@@ -12,11 +12,12 @@ import {
   BodyParserMiddleware,
   getParserOptions,
   invokeBodyParserMiddleware,
+  builtinParsers,
 } from './body-parser.helpers';
 import {BodyParser, RequestBody} from './types';
 
 export class UrlEncodedBodyParser implements BodyParser {
-  name = 'urlencoded';
+  name = builtinParsers.urlencoded;
   private urlencodedParser: BodyParserMiddleware;
 
   constructor(

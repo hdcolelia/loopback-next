@@ -12,6 +12,7 @@ import {
   BodyParserMiddleware,
   getParserOptions,
   invokeBodyParserMiddleware,
+  builtinParsers,
 } from './body-parser.helpers';
 import {BodyParser, RequestBody} from './types';
 
@@ -19,7 +20,7 @@ import {BodyParser, RequestBody} from './types';
  * Parsing the request body into Buffer
  */
 export class RawBodyParser implements BodyParser {
-  name = 'raw';
+  name = builtinParsers.raw;
   private rawParser: BodyParserMiddleware;
 
   constructor(

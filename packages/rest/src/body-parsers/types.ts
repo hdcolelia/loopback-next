@@ -36,7 +36,7 @@ export interface BodyParser {
   /**
    * Name of the parser
    */
-  name: string;
+  name: string | symbol;
   /**
    * Indicate if the given media type is supported
    * @param mediaType Media type

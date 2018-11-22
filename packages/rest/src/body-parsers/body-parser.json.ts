@@ -12,11 +12,12 @@ import {
   BodyParserMiddleware,
   getParserOptions,
   invokeBodyParserMiddleware,
+  builtinParsers,
 } from './body-parser.helpers';
 import {BodyParser, RequestBody} from './types';
 
 export class JsonBodyParser implements BodyParser {
-  name = 'json';
+  name = builtinParsers.json;
   private jsonParser: BodyParserMiddleware;
 
   constructor(
@@ -32,7 +33,12 @@ export class JsonBodyParser implements BodyParser {
   }
 
   async parse(request: Request): Promise<RequestBody> {
-    const body = await invokeBodyParserMiddleware(this.jsonParser, request);
+    let body = await invokeBodyParserMiddleware(this.jsonParser, request);
+    // https://github.com/expressjs/body-parser/blob/master/lib/types/json.js#L71-L76
+    const contentLength = request.get('content-length');
+    if (contentLength != null && +contentLength === 0) {
+      body = undefined;
+    }
     return {value: body};
   }
 }

@@ -3,23 +3,25 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {Context} from '@loopback/core';
 import {OperationObject, RequestBodyObject} from '@loopback/openapi-v3-types';
 import {
   expect,
   ShotRequestOptions,
   stubExpressContext,
 } from '@loopback/testlab';
-import {Request, RequestBodyParser} from '../..';
 import {
-  RequestBodyParserOptions,
   JsonBodyParser,
-  UrlEncodedBodyParser,
-  TextBodyParser,
-  StreamBodyParser,
   RawBodyParser,
+  Request,
+  RequestBody,
+  RequestBodyParser,
+  RequestBodyParserOptions,
+  StreamBodyParser,
+  TextBodyParser,
+  UrlEncodedBodyParser,
 } from '../..';
-import {RequestBody} from '../../src';
-import {Context} from '@loopback/core';
+import {builtinParsers} from '../../src/body-parsers/body-parser.helpers';
 
 describe('body parser', () => {
   const defaultSchema = {
@@ -186,7 +188,7 @@ describe('body parser', () => {
 
   it('sorts body parsers', () => {
     const options: RequestBodyParserOptions = {};
-    const bodyParser = new RequestBodyParser(options, [
+    const bodyParser = new RequestBodyParser([
       new TextBodyParser(options),
       new StreamBodyParser(),
       new JsonBodyParser(options),
@@ -201,19 +203,11 @@ describe('body parser', () => {
       },
     ]);
     const names = bodyParser.parsers.map(p => p.name);
-    expect(names).to.eql([
-      'xml',
-      'json',
-      'urlencoded',
-      'text',
-      'raw',
-      'stream',
-    ]);
+    expect(names).to.eql(['xml', ...builtinParsers.names]);
   });
 
   it('normalizes parsing errors', async () => {
-    const options: RequestBodyParserOptions = {};
-    const bodyParser = new RequestBodyParser(options, [
+    const bodyParser = new RequestBodyParser([
       {
         name: 'xml',
         supports: mediaType => true,
@@ -346,7 +340,15 @@ describe('body parser', () => {
   });
 
   function givenRequestBodyParser() {
-    requestBodyParser = new RequestBodyParser({}, undefined, new Context());
+    const options: RequestBodyParserOptions = {};
+    const parsers = [
+      new JsonBodyParser(options),
+      new UrlEncodedBodyParser(options),
+      new TextBodyParser(options),
+      new StreamBodyParser(),
+      new RawBodyParser(options),
+    ];
+    requestBodyParser = new RequestBodyParser(parsers, new Context());
   }
 
   function givenOperationWithRequestBody(requestBody?: RequestBodyObject) {
